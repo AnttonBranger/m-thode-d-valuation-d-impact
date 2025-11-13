@@ -1,0 +1,52 @@
+---
+title: "Exercice 1"
+output: html_document
+date: "`r Sys.Date()`"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+rm(list = ls())
+```
+
+Chargement des packages
+```{r, include=FALSE}
+library(tidyverse)
+```
+
+```{r}
+MEIfinal <- MEIfinal %>% 
+  mutate(time = factor(time),
+         FHP = factor(FHP))
+```
+
+Question 1 : Comparaison des caractéristiques des groupes contrôle et traiatement. 
+
+```{r}
+MEIfinal_2007 <- MEIfinal %>% 
+  filter(Year == 2007)
+```
+
+```{r}
+MEIfinal_2007 %>% 
+  ggplot(aes(x = FHP, y = hosp_inf_5y)) + 
+  geom_boxplot() +
+  labs(y = "Hospitalisation des enfants de - de 5 ans")
+```
+Illétrisme et taux de pauvreté ne sont pas les mêmes dans les deux groupes. Ils ne se ressemblent pas trop. 
+Question 2 : 
+
+```{r}
+# Regression logistique avec glm
+ps <- glm(formula = FHP ~ Income + Poverty + MHDI + Lifeexp + Beds, family = binomial(), MEIfinal_2007)
+summary(ps)
+# pour attacher les scores de propension à la base de données
+MEIfinal_2007$score_value <- predict(ps, type = "response")
+```
+
+Fonction matchit il faut utiliser une graine aléatoire. 
+Regarder le package cobalt pour les sorties de modèle. 
+t-test pas significatif normal puisque l'appariement est nul. 
