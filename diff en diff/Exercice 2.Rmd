@@ -1,0 +1,107 @@
+---
+title: "Exercice 2"
+output: html_document
+date: "`r Sys.Date()`"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+rm(list = ls())
+```
+
+Chargement des packages
+```{r, include=FALSE}
+library(tidyverse)
+```
+
+```{r}
+muni <- muni %>% 
+  mutate(traitement = factor(traitement), 
+         vote = vote * 100) %>% 
+  na.omit()
+summary(muni)
+```
+
+Question 1 : Statistiques descriptives
+
+```{r}
+muni %>% 
+  ggplot(aes(x = annee, y = prop_migrant, color = groupe)) +
+  stat_summary() +
+  stat_summary(fun = mean, geom = "line") +
+  labs(x = "Année",
+       y = "Proportion de migrant",
+       color = "Groupe")
+```
+
+
+```{r}
+muni %>% 
+  ggplot(aes(x = annee, y = vote, color = groupe)) +
+  stat_summary() +
+  stat_summary(fun = mean, geom = "line") + 
+  labs(x = "Année",
+       y = "Vote pour l’extrême droite",
+       color = "Groupe")
+```
+
+Question 2 : 
+```{r}
+muni %>% 
+  filter(annee == 2016) %>% 
+  ggplot(aes(y = vote, fill = traitement)) +
+  geom_boxplot() +
+  labs(x = "Année",
+       y = "Vote pour l'extrème droite",
+       color = "Traitement")
+```
+
+Modèle 
+```{r}
+did <- lm(vote ~ traitement, data = muni %>% filter(annee == 2016))
+summary(did)
+```
+On mesure la différence de moyenne entre les deux groupes qui est de 3 points environ. 
+Attention ici on a un biais de sélection, les migrants vont sur les îles les plus proches
+
+
+Question 3 : Tableau des doubles différences
+```{r}
+pre_0 <- muni %>% 
+  filter(groupe == FALSE, annee == 2015) %>% 
+  summarise(pre_0 = mean(vote)) %>% 
+  select(pre_0)
+pre_1 <- muni %>% 
+  filter(groupe == TRUE, annee == 2015) %>% 
+  summarise(pre_1 = mean(vote)) %>% 
+  select(pre_1)
+diff_in_diff <- 2.9459 - (pre_1 - pre_0)
+```
+2.32
+
+Question 4 : Modèle linéaire avec terme d'interaction
+```{r}
+did1 <- lm(vote ~ annee + groupe + annee:groupe, data = muni)
+summary(did1)
+```
+
+Question 5 
+
+Au vue du graphique de la question 1, l'hypothèse a l'air respectée 
+
+Question 6 
+```{r}
+fe_model <- lm(vote ~ municipalite + groupe + annee, data = muni)
+summary(fe_model)
+```
+
+Question 7 
+
+```{r}
+fe_mod2 <- lm(vote ~ municipalite + annee + prop_migrant, data = muni)
+summary(fe_mod2)
+```
+

@@ -1,0 +1,105 @@
+---
+title: "Exercice 1"
+output: html_document
+date: "`r Sys.Date()`"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+Chargement des packages
+```{r}
+library(tidyverse)
+```
+
+Question 1 : Statistiques descriptives
+```{r}
+covid <- covid %>% 
+  mutate(new_cases_smoothed_per_million = abs(new_cases_smoothed_per_million),
+         new_deaths_smoothed_per_million = abs(new_deaths_smoothed_per_million),
+         time = factor(time),
+         treat1v = factor(treat1v))
+rm(df1v)
+summary(covid)
+```
+
+Séparation du groupe traité et du groupe traitement 
+```{r}
+controle <- covid %>% 
+  filter(treat1v == 0)
+traitement <- covid %>% 
+  filter(treat1v == 1)
+```
+
+Statistiques sur les nouveaux cas
+```{r}
+controle %>% 
+  ggplot(aes(time, new_cases_smoothed_per_million)) +
+  geom_boxplot() +
+  stat_summary(fun = "mean", geom = "point", col = "red")
+```
+
+```{r}
+traitement %>% 
+  ggplot(aes(time, new_cases_smoothed_per_million)) +
+  geom_boxplot()
+```
+
+```{r}
+covid %>% 
+  ggplot(aes(x = date2, y = new_cases_smoothed_per_million, color = treat1v)) +
+  stat_summary(fun = mean, geom = "line") + 
+  labs(x = "Temps", 
+       y = "Nouveau cas (en millions)")
+```
+
+Statistiques sur les décès
+```{r}
+controle %>% 
+  ggplot(aes(time, new_deaths_smoothed_per_million)) +
+  geom_boxplot()
+```
+
+```{r}
+traitement %>% 
+  ggplot(aes(time, new_deaths_smoothed_per_million)) +
+  geom_boxplot()
+```
+
+```{r}
+covid %>% 
+  ggplot(aes(x = date2, y = new_deaths_smoothed_per_million, color = treat1v)) +
+  stat_summary(fun = mean, geom = "line") + 
+  labs(x = "Temps", 
+       y = "Nouveau décès (en millions)")
+```
+
+Remarques : Le groupe traîté semble avoir moins de morts et moins de nouveaux cas que le groupe contrôle. 
+
+Question 2 : Tableau des différences
+
+```{r}
+tab <- table(covid$treat1v, covid$time)
+tab_df <- as.data.frame.matrix(tab)
+tab_df$Diff_col <- tab_df[,2] - tab_df[,1]
+tab_df <- rbind(tab_df,
+                "Différence de différence" = c(-tab_df[1,1] + tab_df[2,1], -tab_df[2,1] + tab_df[2,2], tab_df[2,3] - tab_df[1,3]))
+tab_df
+```
+
+Question 3 : Modèle
+```{r}
+did_death1 <- lm(new_deaths_smoothed_per_million ~ time*treat1v, covid)
+summary(did_death1)
+```
+
+```{r}
+did_case1 <- lm(new_cases_smoothed_per_million ~ time*treat1v, covid)
+summary(did_death1)
+```
+
+Le coefficient qui nous intéresse est le coefficient time1:treat1v1
+
+Vérification des hypothèses : Est-ce qu'on a des tendances parallèles entre les deux groupes ? 
