@@ -1,0 +1,95 @@
+---
+title: "Exercice 2"
+output: html_document
+date: "2025-12-10"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+rm(list = ls())
+```
+
+Chargement des packages
+```{r}
+library(ggplot2)
+library(ggthemes)
+library(dplyr)
+library(stargazer)
+library(MatchIt)
+library(haven) 
+library(tidyverse)
+```
+
+Importation des données
+```{r}
+load("bright_td.Rdata")
+```
+
+
+```{r}
+bright <- bright %>% 
+  na.omit()
+```
+
+Calculatrice du score de propension
+```{r}
+sp <- glm(attending2 ~ Ch_Age + Ch_Girl + Ch_Work_Water + Ch_HeadChild + Hh_HeadSchool + Hh_Telmob + Hh_NumKids + has_school, data = bright)
+summary(sp)
+```
+
+```{r}
+bright$psvalue <- predict(sp, type = "response")
+pred.class = ifelse(bright$psvalue>=0.5,"Traitement","Contrôle")
+confusion = table(bright$attending2,pred.class,dnn=list("Observé","Predit"))
+confusion
+```
+
+Appariement
+```{r}
+ps_match <- matchit(attending2 ~ Ch_Age + Ch_Girl + Ch_Work_Water + Ch_HeadChild + Hh_HeadSchool + Hh_Telmob + Hh_NumKids + has_school, data = bright)
+summary(ps_match)
+```
+
+```{r}
+# Numéro des lignes des individus appariés
+IndApp<-subset(as.data.frame(ps_match$subclass), !is.na(as.data.frame(ps_match$subclass)))
+# Affiche les six premiers individus appariés
+head(IndApp)
+# Tous les individus appariés
+match.final <- match.data(ps_match)
+
+# QQ plot touche entrée pour changer de variables
+plot(ps_match) 
+
+# ici le jdd apparié s'écarte encore plus
+
+# histogramme des score des propension 1ere colonne données brutes, 2eme colonne données appariées
+# on veut que les histogrammes soient identiques traités/controle pour la colonne apparié, ce qui n'est pas du tout le cas
+plot(ps_match,type="hist") 
+
+# support commun peut être visualisé avec l'argument type = jitter
+plot(ps_match,type="jitter")
+# on cherche une répartition similaire entre traités et controle du jdd apparié
+
+# graphe diagnostic
+cobalt::love.plot(ps_match, drop.distance = TRUE)
+# extraire les données 
+match.data <- match.data(ps_match) 
+
+# pour récupérer les correspondances ou avec subclass de match.data 
+matches<-data.frame(ps_match$match.matrix) 
+
+# 5. Effet traitement
+t.test(match.data[match.data$attending2==1,]$Ch_Girl,match.data[match.data$attending2==0,]$Ch_Girl, paired=TRUE)
+# ou 
+# pairwise.t.test(match.data$hosp_inf_5y,match.data$FHP,paired=TRUE, p.adjust.method ="bonferroni")
+
+# comparaison de moyenne sur données appariées
+# ici j'utilise un t.test avec l'option paired 
+# les résultats montrent un effet non significatif mais la méthode n'est pas "correctement" utilisée ici
+# les résultats de l'appariement ne sont pas bons 
+```
+
