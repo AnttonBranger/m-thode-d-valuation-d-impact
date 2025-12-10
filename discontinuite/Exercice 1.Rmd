@@ -1,0 +1,33 @@
+---
+title: "Exercice 1"
+output: html_document
+date: "2025-12-10"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+rm(list = ls())
+```
+
+Chargement des packages
+```{r}
+library(tidyverse)
+library(rddtools)
+```
+
+Netoyage de la bdd
+```{r}
+dtair_clean <- dtair %>% 
+  mutate(treat = factor(treat)) %>% 
+  na.omit()
+summary(dtair_clean)
+```
+
+Passage en rdd_data
+```{r}
+rdd_data <- rddtools::rdd_data(dtair_clean)
+```
+
