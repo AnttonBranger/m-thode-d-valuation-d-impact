@@ -1,0 +1,35 @@
+---
+title: "Exercice 1"
+output: html_document
+date: "2025-12-10"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+rm(list = ls())
+```
+
+Chargement des packages
+```{r}
+library(tidyverse)
+library(AER)
+```
+
+```{r}
+elec_In <- elec_In %>% 
+  mutate(treat = factor(treat),
+         caste = factor(caste), 
+         gender = factor(gender),
+         religion = factor(religion),
+         birthplace = factor(birthplace))
+summary(elec_In)
+```
+
+```{r}
+vi <- ivreg(total_expenditure ~ distance | distance, data = elec_In)
+summary(vi)
+```
+
